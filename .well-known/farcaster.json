@@ -12,7 +12,8 @@
     "iconUrl": "https://pudgy-jump.vercel.app/icon.png",
     "canonicalDomain": "pudgy-jump.vercel.app",
     "requiredChains": ["eip155:8453"],
-    "tags": ["game", "base", "farcaster"],
-    "requiredCapabilities": ["actions.ready", "actions.signIn"]
+    "requiredCapabilities": ["actions.ready", "actions.signIn"],
+    "primaryCategory": "games",
+    "tags": ["game", "base", "farcaster"]
   }
 }
