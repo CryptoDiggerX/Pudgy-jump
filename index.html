@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pudgy Jump</title>
+  <meta name="description" content="Pudgy Jump is a Base-powered jump-and-run mini game." />
+
+  <!-- Farcaster Mini App metadata -->
+  <meta name="fc:miniapp" content='{
+    "version":"1",
+    "imageUrl":"https://your-domain.com/preview.png",
+    "button":{"title":"Play Pudgy Jump","action":{"type":"launch_miniapp"}},
+    "splashImageUrl":"https://your-domain.com/splash.png",
+    "splashBackgroundColor":"#08172b",
+    "homeUrl":"https://your-domain.com"
+  }' />
+
+  <style>
+    :root{
+      --bg1:#071427;
+      --bg2:#0c2f57;
+      --card:#0c3761ee;
+      --cardBorder:#7da7c9aa;
+      --accent:#9f4dff;
+      --accent2:#c86bff;
+      --text:#ffffff;
+      --muted:#c9dbf4;
+      --success:#52f7a7;
+      --shadow:0 18px 50px rgba(0,0,0,.38);
+    }
+    *{box-sizing:border-box}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:radial-gradient(circle at top,#19538a 0%,var(--bg2) 35%,var(--bg1) 100%);
+      color:var(--text);
+      overflow:hidden;
+    }
+    button{font:inherit}
+    .app{
+      position:relative;
+      height:100%;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+    .blur-bg{
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(rgba(7,20,39,.38),rgba(7,20,39,.58)),
+        url('https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+      filter:blur(10px);
+      transform:scale(1.08);
+    }
+    .top-title{
+      position:absolute;
+      top:14px;
+      left:0;
+      right:0;
+      text-align:center;
+      font-weight:800;
+      letter-spacing:.4px;
+      font-size:18px;
+      text-shadow:0 2px 8px rgba(0,0,0,.35);
+      z-index:2;
+    }
+    .modal{
+      position:relative;
+      z-index:2;
+      width:min(92vw,420px);
+      background:var(--card);
+      border:1px solid var(--cardBorder);
+      border-radius:22px;
+      padding:22px 18px 18px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(18px);
+    }
+    .pill{
+      display:inline-block;
+      background:#3e89ff;
+      color:#fff;
+      border-radius:999px;
+      padding:5px 11px;
+      font-size:12px;
+      font-weight:800;
+      margin:0 auto 10px;
+    }
+    .center{ text-align:center; }
+    h1{
+      margin:0 0 8px;
+      font-size:30px;
+      line-height:1.05;
+      letter-spacing:.4px;
+    }
+    p{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+    .fee-box{
+      margin:18px 0 14px;
+      background:#061a33;
+      border:1px solid rgba(125,167,201,.35);
+      border-radius:16px;
+      padding:14px 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:13px;
+    }
+    .fee-box strong{
+      color:var(--success);
+      font-size:14px;
+    }
+    .toggle{
+      display:flex;
+      gap:10px;
+      margin:0 0 14px;
+    }
+    .toggle button{
+      flex:1;
+      border:none;
+      border-radius:14px;
+      padding:12px 10px;
+      background:#0a2443;
+      color:#dbe8f8;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .toggle button.active{
+      background:#153a67;
+      color:#fff;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+    }
+    .start{
+      width:100%;
+      border:none;
+      border-radius:16px;
+      padding:14px 16px;
+      background:linear-gradient(180deg,var(--accent2),var(--accent));
+      color:#fff;
+      font-weight:900;
+      font-size:16px;
+      cursor:pointer;
+      box-shadow:0 10px 24px rgba(159,77,255,.35);
+    }
+    .start:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+    .hint{
+      margin-top:10px;
+      font-size:12px;
+      color:#bfd0e7;
+      text-align:center;
+    }
+    .bottom-nav{
+      position:absolute;
+      z-index:2;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:16px;
+      width:min(92vw,480px);
+      background:rgba(17,52,90,.72);
+      border:1px solid rgba(145,179,215,.35);
+      border-radius:18px;
+      padding:8px;
+      display:flex;
+      gap:6px;
+      backdrop-filter:blur(14px);
+    }
+    .tab{
+      flex:1;
+      text-align:center;
+      padding:10px 0;
+      border-radius:14px;
+      font-size:12px;
+      font-weight:700;
+      color:#e6efff;
+      background:transparent;
+      user-select:none;
+    }
+    .tab.active{
+      background:linear-gradient(180deg,#b05cff,#7a3cff);
+    }
+    .game-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:5;
+      background:rgba(0,0,0,.55);
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .game-card{
+      width:min(92vw,420px);
+      background:#0b2446;
+      border:1px solid rgba(125,167,201,.35);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:var(--shadow);
+      text-align:center;
+    }
+    .game-card h2{margin:0 0 10px;font-size:24px}
+    .game-card p{margin-bottom:14px}
+    .game-area{
+      margin-top:14px;
+      height:210px;
+      border-radius:18px;
+      background:linear-gradient(180deg,#173b6b,#081a35);
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.1);
+    }
+    .runner{
+      position:absolute;
+      left:34px;
+      bottom:24px;
+      width:34px;
+      height:34px;
+      border-radius:10px;
+      background:linear-gradient(180deg,#ffd86b,#ff9f2d);
+      box-shadow:0 10px 20px rgba(0,0,0,.25);
+    }
+    .obstacle{
+      position:absolute;
+      bottom:24px;
+      width:26px;
+      height:46px;
+      right:-40px;
+      border-radius:8px;
+      background:linear-gradient(180deg,#52f7a7,#16b36f);
+      animation:move 2.2s linear infinite;
+    }
+    @keyframes move{
+      from{right:-40px}
+      to{right:100%}
+    }
+    .jump{
+      animation:jump .55s ease-out;
+    }
+    @keyframes jump{
+      0%{transform:translateY(0)}
+      45%{transform:translateY(-78px)}
+      100%{transform:translateY(0)}
+    }
+    .game-footer{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+    }
+    .secondary{
+      flex:1;
+      border:none;
+      border-radius:14px;
+      padding:12px;
+      background:#17365e;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .primary{
+      flex:1;
+      border:none;
+      border-radius:14px;
+      padding:12px;
+      background:linear-gradient(180deg,var(--accent2),var(--accent));
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="blur-bg"></div>
+    <div class="top-title">Pudgy Jump</div>
+
+    <section class="modal" id="payModal">
+      <div class="center">
+        <div class="pill">BASE</div>
+        <h1>PAY TO PLAY</h1>
+        <p>Each run costs $0.03, paid in Base ETH or USDC.</p>
+      </div>
+
+      <div class="fee-box">
+        <span>EST. ETH</span>
+        <strong id="feeText">~0.0000100 ETH</strong>
+      </div>
+
+      <div class="toggle">
+        <button class="active" id="ethBtn" type="button">Base ETH</button>
+        <button id="usdcBtn" type="button">USDC</button>
+      </div>
+
+      <button class="start" id="startBtn" disabled type="button">PAY $0.03 & START</button>
+      <div class="hint" id="hint">Confirm payment in your wallet to begin.</div>
+    </section>
+
+    <nav class="bottom-nav" aria-label="Game navigation">
+      <div class="tab active">Play</div>
+      <div class="tab">Quests</div>
+      <div class="tab">Leaderboard</div>
+      <div class="tab">Airdrop</div>
+      <div class="tab">Invite</div>
+      <div class="tab">Shop</div>
+    </nav>
+  </div>
+
+  <div class="game-overlay" id="gameOverlay" aria-hidden="true">
+    <div class="game-card">
+      <h2>Pudgy Jump</h2>
+      <p>You’re in. Tap jump and avoid obstacles.</p>
+
+      <div class="game-area" id="gameArea">
+        <div class="runner" id="runner"></div>
+        <div class="obstacle" id="obstacle"></div>
+      </div>
+
+      <div class="game-footer">
+        <button class="secondary" id="jumpBtn" type="button">Jump</button>
+        <button class="primary" id="resetBtn" type="button">Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+
+    const RECEIVER_WALLET = '0x580Aab97021D7D379c8d26444eAae332C3014ba7';
+    let paymentMode = 'eth';
+    let paid = false;
+
+    const ethBtn = document.getElementById('ethBtn');
+    const usdcBtn = document.getElementById('usdcBtn');
+    const startBtn = document.getElementById('startBtn');
+    const feeText = document.getElementById('feeText');
+    const hint = document.getElementById('hint');
+    const payModal = document.getElementById('payModal');
+    const gameOverlay = document.getElementById('gameOverlay');
+    const runner = document.getElementById('runner');
+    const jumpBtn = document.getElementById('jumpBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function renderMode() {
+      ethBtn.classList.toggle('active', paymentMode === 'eth');
+      usdcBtn.classList.toggle('active', paymentMode === 'usdc');
+      feeText.textContent = paymentMode === 'eth' ? '~0.0000100 ETH' : 'USDC $0.03';
+      startBtn.disabled = !paid;
+      startBtn.textContent = paid ? 'START GAME' : 'PAY $0.03 & START';
+      hint.textContent = paid
+        ? 'Payment confirmed. Ready to run.'
+        : 'Confirm payment in your wallet to begin.';
+    }
+
+    ethBtn.addEventListener('click', () => {
+      paymentMode = 'eth';
+      paid = false;
+      renderMode();
+    });
+
+    usdcBtn.addEventListener('click', () => {
+      paymentMode = 'usdc';
+      paid = false;
+      renderMode();
+    });
+
+    async function mockPay() {
+      const amount = '0.03';
+      const message = paymentMode === 'eth'
+        ? `Pay ${amount} ETH to ${RECEIVER_WALLET}`
+        : `Pay ${amount} USDC to ${RECEIVER_WALLET}`;
+      const approved = confirm(message + '\
+\
+This demo button simulates payment confirmation.');
+      if (!approved) throw new Error('Payment cancelled');
+    }
+
+    startBtn.addEventListener('click', async () => {
+      if (paid) {
+        payModal.style.display = 'none';
+        gameOverlay.style.display = 'flex';
+        gameOverlay.setAttribute('aria-hidden', 'false');
+        return;
+      }
+
+      startBtn.disabled = true;
+      startBtn.textContent = 'PAYMENT PENDING...';
+
+      try {
+        await mockPay();
+        paid = true;
+        renderMode();
+        payModal.style.display = 'none';
+        gameOverlay.style.display = 'flex';
+        gameOverlay.setAttribute('aria-hidden', 'false');
+      } catch (e) {
+        startBtn.disabled = false;
+        startBtn.textContent = 'PAY $0.03 & START';
+        hint.textContent = 'Payment failed or cancelled. Try again.';
+      }
+    });
+
+    function jump() {
+      runner.classList.remove('jump');
+      void runner.offsetWidth;
+      runner.classList.add('jump');
+    }
+
+    jumpBtn.addEventListener('click', jump);
+    runner.addEventListener('click', jump);
+
+    resetBtn.addEventListener('click', () => {
+      gameOverlay.style.display = 'none';
+      gameOverlay.setAttribute('aria-hidden', 'true');
+      payModal.style.display = 'block';
+      paid = true;
+      renderMode();
+    });
+
+    await sdk.actions.ready();
+    renderMode();
+  </script>
+</body>
+</html>
